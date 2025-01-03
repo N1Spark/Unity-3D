@@ -3,25 +3,28 @@ using UnityEngine;
 public class FlashLightScript : MonoBehaviour
 {
     private float charge;
-    private float worktime = 10.0f;
+    private float worktime = 60.0f;
     private Light flashLight;
+
+    public float chargeLevel => charge;
     
     void Start()
     {
         charge = 1.0f;
         flashLight = GetComponent<Light>();
         GameState.AddCollectListener(ItemCollected);
+        
     }
 
     private void ItemCollected(string itemName)
     {
         if(itemName == "BatteryLarge")
         {
-            charge = 1.0f;
+            charge += 1.0f;
         }
         if (itemName == "BatteryMedium")
         {
-            charge = 0.70f;
+            charge += 0.70f;
         }
     }
     void Update()
@@ -32,7 +35,9 @@ public class FlashLightScript : MonoBehaviour
             {
                 flashLight.intensity = charge;
                 charge -= Time.deltaTime / worktime;
+                
             }
+            
         }
         if (GameState.isFpv)
         {

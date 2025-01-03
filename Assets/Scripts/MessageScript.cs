@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class MessageScript : MonoBehaviour
 {
-    private float timeout = 5.0f;
+    private float timeout = 2.0f;
     private float leftTime;
     private GameObject content;
     private TMPro.TextMeshProUGUI messageTMP;
@@ -17,6 +17,8 @@ public class MessageScript : MonoBehaviour
         content = transform.Find("Content").gameObject;
         messageTMP = transform.Find("Content/MessageText").GetComponent<TMPro.TextMeshProUGUI>();
         leftTime = 0;
+
+        GameState.AddEventListener(OnGameEvent);
     }
 
     void Update()
@@ -37,6 +39,22 @@ public class MessageScript : MonoBehaviour
             leftTime = message.Timeout ?? timeout;
             content.SetActive(true);
         }
+    }
+
+    private void OnGameEvent(string eventName, object data)
+    {
+        {
+            if (data is GameEvents.IMessage m)
+            {
+                ShowMessage(m.message);
+            }
+        }
+        
+    }
+
+    private void OnDestroy()
+    {
+        GameState.RemoveEventListener(OnGameEvent);
     }
     public static void ShowMessage(string messageText, string author = null, float? timeout = null)
     {

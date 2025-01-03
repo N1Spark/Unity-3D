@@ -4,6 +4,14 @@ public class GameState
 {
     public static bool isDay { get; set; }
     public static bool isFpv { get; set; }
+    public static float lookSensitivityX { get; set; } = 0.15f;
+    public static float lookSensitivityY { get; set; } = -0.08f;
+    public static float fpvRange { get; set; } = 1.0f;
+    public static int room { get; set; } = 1;
+    public static float cameraMinTilt { get; set; } = -30f;
+    public static float cameraMaxTilt { get; set; } = 60f;
+    public static Dictionary<String, object> collectedItems { get; private set; } = new();
+
     private static List<Action<String>> collectSubscribers = new List<Action<String>>();
 
     #region effectsVolume
@@ -25,7 +33,6 @@ public class GameState
     #endregion
     
     #region ambientVolume
-
     public static float _ambientVolume { get; set; } = 1f;
     public static float ambientVolume
     {
@@ -40,6 +47,22 @@ public class GameState
         }
     }
 
+    #endregion
+
+    #region musicVolume
+    public static float _musicVolume { get; set; } = 1f;
+    public static float musicVolume
+    {
+        get => _musicVolume;
+        set
+        {
+            if (_musicVolume != value)
+            {
+                _musicVolume = value;
+                NotifyListeners(nameof(musicVolume));
+            }
+        }
+    }
     #endregion
 
     #region isSoundsMuted ( muteAll)
@@ -96,6 +119,51 @@ public class GameState
     public static void Collect(String itemName)
     {
         collectSubscribers.ForEach(s => s(itemName));
+    }
+
+    #endregion
+
+    #region eventSubscribers
+    private const string broadcastKey = "Broadcast";
+    private static Dictionary<String, List<Action<String, object>>> eventSubscribers = new();
+    public static void AddEventListener(Action<String, object> subscriber, params string[] eventNames)
+    {
+        if(eventNames == null || eventNames.Length == 0)
+        {
+            eventNames = new string[1] { broadcastKey };
+        }
+        foreach (string eventName in eventNames)
+        {
+            if (eventSubscribers.ContainsKey(eventName))
+            {
+                eventSubscribers[eventName].Add(subscriber);
+            }
+            else
+            {
+                eventSubscribers[eventName] = new() { subscriber };
+            }
+        }
+    }
+    public static void RemoveEventListener(Action<String, object> subscriber, params string[] eventNames)
+    {
+        if (eventNames == null || eventNames.Length == 0)
+        {
+            eventNames = new string[1] { broadcastKey };
+        }
+        foreach (string eventName in eventNames)
+        {
+            if (eventSubscribers.ContainsKey(eventName))
+                eventSubscribers[eventName].Remove(subscriber);
+            else UnityEngine.Debug.LogWarning("EventListener: empty key - " + eventName);
+        }
+    }
+    public static void TriggerEvent(String eventName, object data)
+    {
+        if (eventSubscribers.ContainsKey(eventName))
+            eventSubscribers[eventName].ForEach(s => s(eventName, data));
+
+        if (eventName != broadcastKey && eventSubscribers.ContainsKey(broadcastKey))
+            eventSubscribers[broadcastKey].ForEach(s => s(eventName, data));
     }
 
     #endregion
